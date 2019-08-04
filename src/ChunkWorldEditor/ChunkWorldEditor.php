@@ -56,6 +56,7 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 	public $sessions = [];
 	public $MaxThread = 7;
 	public $pool;
+
 	public function onEnable(){
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 	}
@@ -99,26 +100,6 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 		}
 		return true;
 	}
-
-	/*public function onPlayerInteract(PlayerInteractEvent $event){
-		if($event->getPlayer()->getInventory()->getItemInHand()->getID() == 280){
-			$player = $event->getPlayer();
-			if(!$player->isOP()) return true;
-			$player->sendMessage("x: (".$event->getBlock()->x." & 0x0f) = ".($event->getBlock()->x & 0x0f));
-			$player->sendMessage("z: (".$event->getBlock()->z." & 0x0f) = ".($event->getBlock()->z & 0x0f));
-			$player->sendMessage("==========");
-			
-			$player->sendMessage("x: (".$event->getBlock()->x." >> 4) = ".($event->getBlock()->x >> 4));
-			$player->sendMessage("z: (".$event->getBlock()->z." >> 4) = ".($event->getBlock()->z >> 4));
-			$player->sendMessage("§a==========");
-			
-		}*/
-		/*if(isset($this->pool[0])){
-			$this->setppp_1(...$this->pool[0]);
-			unset($this->pool[0]);
-			$this->pool = array_values($this->pool);
-		}*/
-	//}
 
 	public function divide($sz,$ez,$thread,$c1 = 1){
 		$array = [];
@@ -177,16 +158,9 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 				for($i = 1; $i <= $count1; $i++){
 					if($i === 1){
 						$this->setppp_1($player,$id,$current,$sy,$sz,$array[$i],$ey,$ez,$i);
-						//$this->pool[] = [$player,$id,$current,$sy,$sz,$array[$i],$ey,$ez,$i];
 					}else{
 						$this->setppp_1($player,$id,$current + 1,$sy,$sz,$array[$i],$ey,$ez,$i);
-						//$this->pool[] = [$player,$id,$current + 1,$sy,$sz,$array[$i],$ey,$ez,$i];
 					}
-					//var_dump("[#".$i."]".($current + 1)." => "$array[$i]);
-					//var_dump("[#".$i."]".$array[$i] - $current);
-					//var_dump(($current + 1)." => ".$array[$i]);
-					//var_dump($array[$i] - $current);
-					//var_dump("==========");
 					$current = $array[$i];
 				}
 			}else if(abs($ez-$sz) >= $thread){
@@ -200,10 +174,8 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 				for($i = 1; $i <= $count1; $i++){
 					if($i === 1){
 						$this->setppp_1($player,$id,$sx,$sy,$current,$ex,$ey,$array[$i] ,$i);//
-						//$this->pool[] = [$player,$id,$sx,$sy,$current,$ex,$ey,$array[$i] ,$i];
 					}else{
 						$this->setppp_1($player,$id,$sx,$sy,$current + 1,$ex,$ey,$array[$i] ,$i);//
-						//$this->pool[] = [$player,$id,$sx,$sy,$current + 1,$ex,$ey,$array[$i] ,$i];
 					}
 					$current = $array[$i];
 				}
@@ -211,42 +183,6 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 				$player->sendMessage("x軸の合計及び、y軸の合計は、スレッド数(現在: ".$thread."スレッドです...)よりも一致または、多くする必要があります。");
 				$player->sendMessage("代わりと致しましては、「/////set」 又は「/////setpp」を利用して頂きたいです...");
 			}
-			/*$count = (int) (($sx - $ex) / $thread);
-			$remainder = ($sx - $ex) % $thread;
-			$array = [];
-			if(($sx - $ex) >= $thread){
-				for ($x = $sx; $x + $remainder <= $ex; $x = $x + $count){
-					$array[] = $x;
-				}
-			}*/
-
-			
-
-			/*if($count >= $thread){
-				$count
-				//for ($x = $sx; $x <= $ex; $x = $x + $count){
-				
-			}*/
-			/*$cx = (abs($sx-$ex) >> 4);
-			$cz = (abs($sz-$ez) >> 4);
-			if($cx <= $cz){
-				
-			}*/
-			/*if((($ex-$sx) >> 4) >= $thread){
-				$interval = abs(round($this->sessions[$name][0]->x - $this->sessions[$name][1]->x / $thread));
-				for($x = $sx; $x - $interval <= $ex; $x += $interval){
-					$this->setppp($player,$id,$x,$sy,$sz,$ex + $interval,$ey,$ez);
-					var_dump($x.",".$sy.",".$sz." : ".($ex + $interval).$ey.$ez);
-				}
-			}else if((($ez-$sz) >> 4) >= $thread){
-				$interval = abs(round($this->sessions[$name][0]->xz - $this->sessions[$name][1]->z / $thread));
-				for($x = $sx; $x - $interval <= $ex; $x += $interval){
-					$this->setppp($player,$id,$x,$sy,$sz,$ex + $interval,$ey,$ez);
-					var_dump($x.",".$sy.",".$sz." : ".($ex + $interval).$ey.$ez);
-				}
-			}else{
-				$player->sendMessage("選択されたチャンクでは、並列な非同期処理を行うことは出来ません。");
-			}*/
 		}
 	}
 
@@ -287,7 +223,6 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 			$pos2 = [$ex,$ey,$ez];
 			
 			$AsyncTask = new setAsyncTaskpp($chunks,$pos1,$pos2,$id,$damage,$player->getLevel()->getName(),$Thread_id);
-			//$AsyncTask = new setAsyncTask($chunks,$pos1,$pos2,$id,$damage,$player->getLevel()->getName(),$Thread_id);
 			$this->getServer()->getAsyncPool()->submitTask($AsyncTask);
 		}else{
 			$player->sendMessage("[WEdit] ERROR: POS1とPOS2が指定されていません。\n[WEdit] //helpを打ち、使い方を読んでください。");
@@ -332,10 +267,6 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 	}
 
 	public function set($player,$id){
-		/*$time_start = microtime(true);
-		$startmemory = memory_get_usage() / (1024 * 1024);
-		$num = 0;*/
-		
 		$name = $player->getName();
 		if(isset($this->sessions[$name][0]) and isset($this->sessions[$name][1])){
 			$did = explode(":", $id);
@@ -398,22 +329,11 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 					}
 				}
 			}
-			//Server::getInstance()->broadcastMessage("[WorldEditor_Plus][1/2] 1つめの変更が終了しました。");
-			//Server::getInstance()->broadcastMessage("[WorldEditor_Plus][2/2] 2つめの変更を開始します...");
 			foreach($chunks as $hash => $chunk){
 				Level::getXZ($hash, $x, $z);
 				$level->setChunk($x, $z, $chunk, false);
 			}
 			Server::getInstance()->broadcastMessage("[WorldEditor_Plus] 変更が終了しました。");
-			
-			/*$processing_time = microtime(true) - $time_start;
-			Server::getInstance()->broadcastMessage("速度: ".$processing_time ."秒");
-			$endmemory = memory_get_usage() / (1024 * 1024);
-			Server::getInstance()->broadcastMessage("メモリ使用: ".$startmemory."MB => ".$endmemory."MB(".($endmemory-$startmemory).")");
-			
-			Server::getInstance()->broadcastMessage("1秒あたり:「".($num / $processing_time)."」ブロック");*/
-			//$AsyncTask = new setAsyncTask($chunks,$pos1,$pos2,$id,$damage,$player->getLevel()->getName());
-			//$this->getServer()->getAsyncPool()->submitTask($AsyncTask);
 		}else{
 			$player->sendMessage("[WEdit] ERROR: POS1とPOS2が指定されていません。\n[WEdit] //helpを打ち、使い方を読んでください。");
 		}
@@ -515,7 +435,6 @@ class setAsyncTask extends AsyncTask{
 	}
 
 	public function onRun(){
-		//$this->chunks[];
 		$pos1 = unserialize($this->pos1);
 		$pos2 = unserialize($this->pos2);
 		$chunks = unserialize($this->chunks);
@@ -568,12 +487,6 @@ class setAsyncTask extends AsyncTask{
 						}
 					}
 					$currentSubChunk->setBlock($x & 0x0f, $y & 0x0f, $z & 0x0f, $id & 0xff, $damage & 0xff);
-					//++$now;
-					/*$Progress = round(($now / $num) * 100) . "%";
-					if($currentProgress === null or $Progress !== $currentProgress){
-						$currentProgress = $Progress;
-						var_dump($Progress);
-					}*/
 				}
 			}
 		}
@@ -612,7 +525,6 @@ class setAsyncTaskpp extends AsyncTask{
 		$this->chunks = serialize($chunks);
 		$this->pos1 = serialize($pos1);
 		$this->pos2 = serialize($pos2);
-		//$this->changed = serialize([]);
 		$this->id = $id;
 		$this->damage = $damage;
 		$this->LevelName = $LevelName;
@@ -700,8 +612,6 @@ class setAsyncTaskpp extends AsyncTask{
 		}
 		Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[1/2] 1つめの変更が終了しました。");
 		Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[2/2] 2つめの変更を開始します...");
-		//$chunks = $this->getResult();
-		//$changed = serialize($this->changed);
 		$chunks = unserialize($this->chunks_result);
 		unset($this->chunks);
 		$changed = unserialize($this->changed);
