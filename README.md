@@ -2,6 +2,11 @@
 
 ## License
 
+Plugin Name|Author|License|
+|:---|:---|:---|
+|MineReset|Falkirks|MIT|
+|WEdit|Gonbe34|None|
+
 ### MineReset
 
 ```
