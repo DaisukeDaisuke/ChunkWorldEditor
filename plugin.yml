@@ -1,0 +1,18 @@
+name: ChunkWorldEditor
+main: ChunkWorldEditor\ChunkWorldEditor
+version: 1.0
+api: 3.0.0
+load: POSTWORLD
+commands:
+ ////set:
+  description: 非同期なチャンクワールドエディタです。
+  usage: "////set"
+ ////setpp:
+  description: チャンクワールドエディタです。
+  usage: "////setpp"
+ ////setppp:
+  description: チャンクワールドエディタです。
+  usage: "////setppp"
+ ////e:
+  description: 非同期なチャンクワールドエディタ、座標リセットコマンドでございます。
+  usage: "/////e"
