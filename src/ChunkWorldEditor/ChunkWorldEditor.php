@@ -107,6 +107,8 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 			$sx = 0;
 			$ex = 100;
 			$thread = 8;
+			
+			(($ez - $sz) / $thread) の計算結果ごとに、スレッドの境目を仮決定致します。
 			$array = [12, 24, 36, 48, 60, 72, 84, 96];
 			↓割り切れなかった数字...(割り算のあまり...)を順次追加致します...
 			$array = [13, 26, 39, 52, 64, 76, 88, 100];
