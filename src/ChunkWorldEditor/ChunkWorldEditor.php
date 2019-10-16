@@ -102,6 +102,15 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 	}
 
 	public function divide($sz,$ez,$thread,$c1 = 1){
+		/*
+			(($ez - $sz) / $thread) の計算結果ごとに、スレッドの境目を仮決定致しまして、割り切れなかった座標を追加致します...
+			$sx = 0;
+			$ex = 100;
+			$thread = 8;
+			$array = [12, 24, 36, 48, 60, 72, 84, 96];
+			↓割り切れなかった数字...(割り算のあまり...)を順次追加致します...
+			$array = [13, 26, 39, 52, 64, 76, 88, 100];
+		*/
 		$array = [];
 		$count = (int) (($ez - $sz) / $thread);
 		$remainder = ($ez - $sz) % $thread;
@@ -112,6 +121,13 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 			}
 			$array[] = $z;
 		}
+		/*
+			スレッド間の開始、終了位置はチャンクの境目(16の倍数 - 1)である必要があるため、
+			仮決定致しました、座標リストを 16の倍数 - 1 に揃えます...(最初の座標と最後の座標を除きます...)
+			$array = [13, 26, 39, 52, 64, 76, 88, 100];
+			↓16の倍数 - 1 に 揃えます...(最初の座標と最後の座標を除きます...)
+			$array = [13, 31, 47, 63, 63, 79, 95, 100];
+		*/
 		$count2 = count($array)-1;
 		$count3 = count($array)-2;
 		$max = $array[$count2];
@@ -123,6 +139,13 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 				$array[$i] = (int) $max;
 			}
 		}
+		/*
+			同じ座標の変更(0ブロックの変更)を削除致します。
+			$array = [13, 31, 47, 63, 63, 79, 95, 100];
+			↓//同じ数字を1つに集約(削除)致します...
+			$array = [13, 31, 47, 63, 79, 95, 100];
+
+		*/
 		$oldarray = $array;
 		for($i = 1; $i <= $count2; $i++){
 			if($oldarray[$i-1] == $array[$i]){
