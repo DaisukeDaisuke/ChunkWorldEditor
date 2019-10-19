@@ -1,5 +1,22 @@
 # ChunkWorldEditor
 
+高速ワールドエディタ！    
+従来の51倍(当社比)の速度を実現することに成功致しました！    
+また、非同期、マルチスレッドに対応しており、さらに高速、快適に変更することが可能にてございます！    
+
+## usage
+金ブロック(Id: 41)を手に持ち、設置、破壊を行うことにより、座標の指定を行います。    
+以下のコマンドを実行することによって、ブロックの設置をおこなうことが可能にてございます。
+
+## commands
+
+|Command|Description|Async|MultiThread|
+|:---:|:---:|:---:|:---:|
+|/////set|同期チャンクワールドエディタ<br><br>Usage:`/////set [BlockId:BlockDamage]`|❌|❌|
+|/////setpp|非同期チャンクワールドエディタ(1スレッド)<br><br>Usage:`/////setpp [BlockId:BlockDamage]`️️|✔️|❌|
+|/////setppp|非同期チャンクワールドエディタ(マルチスレッド)<br><br>Usage:`/////setppp [BlockId:BlockDamage] [ThreadCount]`|✔️|✔️|
+|/////e|座標をリセット致します。|N/A|N/A|
+
 ## License
 
 Plugin Name|Author|License|
