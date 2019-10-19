@@ -17,6 +17,12 @@
 |/////setppp|非同期チャンクワールドエディタ(マルチスレッド)<br><br>Usage:`/////setppp [BlockId:BlockDamage] [ThreadCount]`|✔️|✔️|
 |/////e|座標をリセット致します。|N/A|N/A|
 
+## Warning
+`/////setpp`または、`/////setppp`使用時にサーバーに負荷がかかる可能性があるため、    
+他人の所持しているサーバー、VPS等にてこのコマンドを使用して、サーバー等に不利益が生じた場合、    
+プラグイン作成者は責任を負いません。        
+申し訳ないです...
+
 ## License
 
 Plugin Name|Author|License|
