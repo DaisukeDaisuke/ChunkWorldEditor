@@ -18,7 +18,7 @@
 |/////uset|同期チャンクワールドエディタ<br>(`/////undo`可能...)<br><br>Usage:`/////uset [BlockId:BlockDamage]`|✔️|❌|❌|
 |/////usetpp|非同期チャンクワールドエディタ<br>(1スレッド)(`/////undo`可能...)<br><br>Usage:`/////usetpp [BlockId:BlockDamage]`️️|✔️|✔️|❌|
 |/////usetppp|非同期チャンクワールドエディタ<br>(マルチスレッド)(`/////undo`可能...)<br><br>Usage:`/////usetppp [BlockId:BlockDamage] [ThreadCount]`|✔️|✔️|✔️|
-|/////undo|前回行った操作を取り消します。<br>`undoable`なコマンドのみ、<br>undoすることが可能にてございます<br>前回の操作はマルチスレッドの場合、<br>このコマンドはマルチスレッドにて動作いたします。<br>usage:`/////undo`|N/A|✔️|🔺|
+|/////undo|前回行った操作を取り消します。<br>`undoable`なコマンドのみ、<br>undoすることが可能にてございます<br>前回の操作はマルチスレッドの場合、<br>このコマンドはマルチスレッドにて動作いたします。<br>Usage:`/////undo`|N/A|✔️|🔺|
 |/////e|座標をリセット致します。|N/A|N/A|N/A|
 
 ## Warning
