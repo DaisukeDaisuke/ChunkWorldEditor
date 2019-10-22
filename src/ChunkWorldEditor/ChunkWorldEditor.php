@@ -61,10 +61,6 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 
 	public $undodata = [];
 
-	const TYPE_SET = 0;
-	const TYPE_SETPP = 1;
-	const TYPE_SETPPP = 2;
-
 	public function onLoad(){
 		self::$instance = $this;
 	}
