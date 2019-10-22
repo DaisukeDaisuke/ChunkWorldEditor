@@ -61,6 +61,10 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 
 	public $undodata = [];
 
+	const TYPE_SET = 0;
+	const TYPE_SETPP = 1;
+	const TYPE_SETPPP = 2;
+
 	public function onLoad(){
 		self::$instance = $this;
 	}
@@ -352,6 +356,102 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 		}
 	}
 
+	public function usetppp($player,$id,$thread = 4){//int $thread
+		$name = $player->getName();
+		if(isset($this->sessions[$name][0]) and isset($this->sessions[$name][1])){
+			$sx = min($this->sessions[$name][0]->x, $this->sessions[$name][1]->x);
+			$sy = min($this->sessions[$name][0]->y, $this->sessions[$name][1]->y);
+			$sz = min($this->sessions[$name][0]->z, $this->sessions[$name][1]->z);
+			$ex = max($this->sessions[$name][0]->x, $this->sessions[$name][1]->x);
+			$ey = max($this->sessions[$name][0]->y, $this->sessions[$name][1]->y);
+			$ez = max($this->sessions[$name][0]->z, $this->sessions[$name][1]->z);
+			
+			if(abs($ex-$sx) >= $thread){
+				if($ex-$sx > 0){
+					$array = $this->divide($sx,$ex,$thread);
+				}else{
+					$array = $this->divide($ex,$sx,$thread);
+				}
+				$current = $array[0];
+				$count1 = count($array)-1;
+				for($i = 1; $i <= $count1; $i++){
+					if($i === 1){
+						$this->usetppp_1($player,$id,$current,$sy,$sz,$array[$i],$ey,$ez,$i);
+					}else{
+						$this->usetppp_1($player,$id,$current + 1,$sy,$sz,$array[$i],$ey,$ez,$i);
+					}
+					$current = $array[$i];
+				}
+			}else if(abs($ez-$sz) >= $thread){
+				if($ez-$sz > 0){
+					$array = $this->divide($sz,$ez,$thread);
+				}else{
+					$array = $this->divide($ez,$sz,$thread);
+				}
+				$current = $array[0];//
+				$count1 = count($array)-1;
+				for($i = 1; $i <= $count1; $i++){
+					if($i === 1){
+						$this->usetppp_1($player,$id,$sx,$sy,$current,$ex,$ey,$array[$i] ,$i);//
+					}else{
+						$this->usetppp_1($player,$id,$sx,$sy,$current + 1,$ex,$ey,$array[$i] ,$i);//
+					}
+					$current = $array[$i];
+				}
+			}else{
+				$player->sendMessage("x軸の合計及び、y軸の合計は、スレッド数(現在: ".$thread."スレッドです...)よりも一致または、多くする必要があります。");
+				$player->sendMessage("代わりと致しましては、「/////set」 又は「/////setpp」を利用して頂きたいです...");
+			}
+		}
+	}
+
+	public function usetppp_1($player,$id,$sx1,$sy1,$sz1,$ex1,$ey1,$ez1,$Thread_id = -1){
+		$name = $player->getName();
+		if(isset($this->sessions[$name][0]) and isset($this->sessions[$name][1])){
+			$sx = min($sx1, $ex1);
+			$sy = min($sy1, $ey1);
+			$sz = min($sz1, $ez1);
+			$ex = max($sx1, $ex1);
+			$ey = max($sy1, $ey1);
+			$ez = max($sz1, $ez1);
+			
+			$did = explode(":", $id);
+			$id = 0;
+			$damage = 0;
+			if(isset($did[0])){
+				$id = (int) $did[0];
+			}
+			if(isset($did[1])){
+				$damage = (int) $did[1];
+			}
+			$num = ($ex - $sx + 1) * ($ey - $sy +1) * ($ez - $sz + 1);
+			if($Thread_id == -1){
+				Server::getInstance()->broadcastMessage("[WorldEditor_Plus][1/2] ".$name."が変更を開始します…(Async_set) : ".$num."ブロック)");
+			}else{
+				Server::getInstance()->broadcastMessage("[WorldEditor_Plus][#".$Thread_id."][1/2] ".$name."が変更を開始します…(Async_set) : ".$num."ブロック)");
+			}
+			$level = $player->getLevel();
+			$chunks = [];
+			$chunkTile = [];
+			for($x = $sx; $x - 16 <= $ex; $x += 16){
+				for($z = $sz; $z - 16 <= $ez; $z += 16){
+					$chunk = $level->getChunk($x >> 4, $z >> 4, true);
+					$chunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk->fastSerialize();
+					$chunkTile[Level::chunkHash($x >> 4, $z >> 4)] = $this->getNBTByTile($chunk->getTiles());
+				}
+			}
+			$this->undodata[$name][$Thread_id][2] = $chunkTile;//array
+			$this->undodata[$name][$Thread_id][3] = [new Vector3($sx,$sy,$sz),new Vector3($ex,$ey,$ez)];
+			$pos1 = [$sx,$sy,$sz];
+			$pos2 = [$ex,$ey,$ez];
+			
+			$AsyncTask = new usetAsyncTask($chunks,$pos1,$pos2,$id,$damage,$player->getLevel()->getName(),$Thread_id,$name);
+			$this->getServer()->getAsyncPool()->submitTask($AsyncTask);
+		}else{
+			$player->sendMessage("[WEdit] ERROR: POS1とPOS2が指定されていません。\n[WEdit] //helpを打ち、使い方を読んでください。");
+		}
+	}
+
 	public function usetpp($player,$id){
 		$name = $player->getName();
 		if(isset($this->sessions[$name][0]) and isset($this->sessions[$name][1])){
@@ -382,8 +482,8 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 					$chunkTile[Level::chunkHash($x >> 4, $z >> 4)] = $this->getNBTByTile($chunk->getTiles());
 				}
 			}
-			$this->undodata[$name][2] = $chunkTile;//string
-			$this->undodata[$name][3] = $this->sessions[$name];
+			$this->undodata[$name][-1][2] = $chunkTile;//array
+			$this->undodata[$name][-1][3] = $this->sessions[$name];
 			$pos1 = [$sx,$sy,$sz];
 			$pos2 = [$ex,$ey,$ez];
 			$AsyncTask = new usetAsyncTask($chunks,$pos1,$pos2,$id,$damage,$player->getLevel()->getName(),-1,$name);
@@ -419,12 +519,12 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 			for($x = $sx; $x - 16 <= $ex; $x += 16){
 				for($z = $sz; $z - 16 <= $ez; $z += 16){
 					$chunk = $level->getChunk($x >> 4, $z >> 4, true);
-					$chunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk->fastSerialize();
+					$chunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk;
 					$chunkTile[Level::chunkHash($x >> 4, $z >> 4)] = $this->getNBTByTile($chunk->getTiles());
 				}
 			}
-			$this->undodata[$name][2] = $chunkTile;//string
-			$this->undodata[$name][3] = $this->sessions[$name];
+			$this->undodata[$name][-1][2] = $chunkTile;//array
+			$this->undodata[$name][-1][3] = $this->sessions[$name];
 			$currentProgress = null;
 
 			$currentChunkX = $sx >> 4;
@@ -433,6 +533,9 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 
 			$currentChunk = null;
 			$currentSubChunk = null;
+
+			$undodataId = "";
+			$undodataDamage = "";
 			for($x = $sx; $x <= $ex; ++$x){
 				$chunkX = $x >> 4;
 				for($z = $sz; $z <= $ez; ++$z){
@@ -469,9 +572,9 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 					}
 				}
 			}
-			ChunkWorldEditor::getinstance()->undodata[$this->ownername][0] = $undodataId;
+			ChunkWorldEditor::getinstance()->undodata[$name][-1][0] = $undodataId;
 			unset($undodataId);
-			ChunkWorldEditor::getinstance()->undodata[$this->ownername][1] = $undodataDamage;
+			ChunkWorldEditor::getinstance()->undodata[$name][-1][1] = $undodataDamage;
 			unset($undodataDamage);
 			foreach($chunks as $hash => $chunk){
 				Level::getXZ($hash, $x, $z);
@@ -485,36 +588,44 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 
 	public function Undo($player){
 		$name = $player->getName();
-		if(isset($this->undodata[$name][0])){
-			$sx = min($this->undodata[$name][3][0]->x, $this->undodata[$name][3][1]->x);
-			$sy = min($this->undodata[$name][3][0]->y, $this->undodata[$name][3][1]->y);
-			$sz = min($this->undodata[$name][3][0]->z, $this->undodata[$name][3][1]->z);
-			$ex = max($this->undodata[$name][3][0]->x, $this->undodata[$name][3][1]->x);
-			$ey = max($this->undodata[$name][3][0]->y, $this->undodata[$name][3][1]->y);
-			$ez = max($this->undodata[$name][3][0]->z, $this->undodata[$name][3][1]->z);
-			$num = ($ex - $sx + 1) * ($ey - $sy +1) * ($ez - $sz + 1);
-			Server::getInstance()->broadcastMessage("[WorldEditor_Plus][1/2] ".$name."が変更を開始します…(Async_Undo) : ".$num."ブロック)");
-			$level = $player->getLevel();
-			$chunks = [];
-			$chunkTile = $this->undodata[$name][2];
-			for($x = $sx; $x - 16 <= $ex; $x += 16){
-				for($z = $sz; $z - 16 <= $ez; $z += 16){
-					$chunk = $level->getChunk($x >> 4, $z >> 4, true);
-					$chunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk->fastSerialize();
-					$tiles = $this->getTileByNBT($level,$chunkTile[Level::chunkHash($x >> 4, $z >> 4)]);
-					/*foreach($tiles as $tile){
-						$level->addTile($tile);
-						$tile->spawnToAll();
-					}*/
-					//$chunkTile[Level::chunkHash($x >> 4, $z >> 4)] = serialize($chunk->getTiles());
+		if(isset($this->undodata[$name])){
+			foreach($this->undodata[$name] as $Thread_id => $data){
+				if(isset($data[0])){
+					$label = "";
+					if($Thread_id !== -1){
+						$label = "[#".$Thread_id."]";
+					}
+					$sx = min($data[3][0]->x, $data[3][1]->x);
+					$sy = min($data[3][0]->y, $data[3][1]->y);
+					$sz = min($data[3][0]->z, $data[3][1]->z);
+					$ex = max($data[3][0]->x, $data[3][1]->x);
+					$ey = max($data[3][0]->y, $data[3][1]->y);
+					$ez = max($data[3][0]->z, $data[3][1]->z);
+					$num = ($ex - $sx + 1) * ($ey - $sy +1) * ($ez - $sz + 1);
+					Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[1/2] ".$name."が変更を開始します…(Async_Undo) : ".$num."ブロック)");
+					$level = $player->getLevel();
+					$chunks = [];
+					$chunkTile = $data[2];
+					for($x = $sx; $x - 16 <= $ex; $x += 16){
+						for($z = $sz; $z - 16 <= $ez; $z += 16){
+							$chunk = $level->getChunk($x >> 4, $z >> 4, true);
+							$chunks[Level::chunkHash($x >> 4, $z >> 4)] = $chunk->fastSerialize();
+							$tiles = $this->getTileByNBT($level,$chunkTile[Level::chunkHash($x >> 4, $z >> 4)]);
+							/*foreach($tiles as $tile){
+								$level->addTile($tile);
+								$tile->spawnToAll();
+							}*/
+							//$chunkTile[Level::chunkHash($x >> 4, $z >> 4)] = serialize($chunk->getTiles());
+						}
+					}
+					//$data[1] = $chunkTile;
+					//$data[2] = $this->sessions[$name];
+					$pos1 = [$sx,$sy,$sz];
+					$pos2 = [$ex,$ey,$ez];
+					$AsyncTask = new UndoAsyncTask($chunks,$pos1,$pos2,$data[0],$data[1],$player->getLevel()->getName(),$Thread_id);
+					$this->getServer()->getAsyncPool()->submitTask($AsyncTask);
 				}
 			}
-			//$this->undodata[$name][1] = $chunkTile;
-			//$this->undodata[$name][2] = $this->sessions[$name];
-			$pos1 = [$sx,$sy,$sz];
-			$pos2 = [$ex,$ey,$ez];
-			$AsyncTask = new UndoAsyncTask($chunks,$pos1,$pos2,$this->undodata[$name][0],$this->undodata[$name][1],$player->getLevel()->getName());
-			$this->getServer()->getAsyncPool()->submitTask($AsyncTask);
 		}
 	}
 
@@ -523,6 +634,12 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 			if(!$sender->isOP()) return true;
 			if(isset($args[0])){
 				$this->set($sender,$args[0]);
+			}
+			return true;
+		}else if($label === "////uset"){
+			if(!$sender->isOP()) return true;
+			if(isset($args[0])){
+				$this->uset($sender,$args[0]);
 			}
 			return true;
 		}else if($label === "////setpp"){
@@ -593,7 +710,7 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 		return true;
 	}
 
-	public function getNBTByTile(array $array){
+	public function getNBTByTile(array $array): array{
 		$return = [];
 		foreach($array as $key => $object){
 			$return[$key] = [$object->saveNBT(),get_class($object)];
@@ -601,7 +718,7 @@ class ChunkWorldEditor extends PluginBase implements Listener{
 		return $return;
 	}
 
-	public function getTileByNBT(Level $level,array $datas){
+	public function getTileByNBT(Level $level,array $datas): array{
 		$return = [];
 		foreach($datas as $key => $array){
 			$return[] = new $array[1]($level,$array[0]);
@@ -878,6 +995,7 @@ class usetAsyncTask extends AsyncTask{
 		$pos1 = unserialize($this->pos1);
 		$pos2 = unserialize($this->pos2);
 		$chunks = unserialize($this->chunks);
+		$changed = [];
 		foreach($chunks as $hash => $binary){
 			$chunks[$hash] = \pocketmine\level\format\Chunk::fastDeserialize($binary);
 		}
@@ -919,6 +1037,7 @@ class usetAsyncTask extends AsyncTask{
 					$currentSubChunk = null;
 					$hash = Level::chunkHash($chunkX, $chunkZ);
 					$currentChunk = $chunks[$hash];
+					$changed[$hash] = true;
 					if($currentChunk === null){
 						continue;
 					}
@@ -957,7 +1076,8 @@ class usetAsyncTask extends AsyncTask{
 		//$this->undodataDamage = serialize($undodataDamage);
 		$this->undodataDamage = $undodataDamage;
 		unset($undodataDamage);
-		
+		$this->changed = serialize($changed);
+		unset($changed);
 	}
 
 	public function onCompletion(Server $server){
@@ -970,14 +1090,18 @@ class usetAsyncTask extends AsyncTask{
 		Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[2/2] 2つめの変更を開始します...");
 		$chunks = unserialize($this->chunks_result);
 		unset($this->chunks_result);
+		$changed = unserialize($this->changed);
+		unset($this->changed);
 		$level = $server->getLevelByName($this->LevelName);
 		foreach($chunks as $hash => $chunk){
-			Level::getXZ($hash, $x, $z);
-			$level->setChunk($x, $z, $chunk, false);
+			if(isset($changed[$hash])){
+				Level::getXZ($hash, $x, $z);
+				$level->setChunk($x, $z, $chunk, false);
+			}
 		}
-		ChunkWorldEditor::getinstance()->undodata[$this->ownername][0] = $this->undodataId;
+		ChunkWorldEditor::getinstance()->undodata[$this->ownername][$Thread_id][0] = $this->undodataId;
 		unset($this->undodataId);
-		ChunkWorldEditor::getinstance()->undodata[$this->ownername][1] = $this->undodataDamage;
+		ChunkWorldEditor::getinstance()->undodata[$this->ownername][$Thread_id][1] = $this->undodataDamage;
 		unset($this->undodataDamage);
 		Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[2/2] 2つめの変更が終了しました。");
 	}
@@ -1007,6 +1131,7 @@ class UndoAsyncTask extends AsyncTask{
 		$pos1 = unserialize($this->pos1);
 		$pos2 = unserialize($this->pos2);
 		$chunks = unserialize($this->chunks);
+		$changed = [];
 		//$undodataId = unserialize($this->undodataId);
 		//$undodataDamage = unserialize($this->undodataDamage);
 		$undodataId = $this->undodataId;
@@ -1046,6 +1171,7 @@ class UndoAsyncTask extends AsyncTask{
 					$currentSubChunk = null;
 					$hash = Level::chunkHash($chunkX, $chunkZ);
 					$currentChunk = $chunks[$hash];
+					$changed[$hash] = true;
 					if($currentChunk === null){
 						continue;
 					}
@@ -1059,7 +1185,6 @@ class UndoAsyncTask extends AsyncTask{
 							continue;
 						}
 					}
-					var_dump(ord($undodataId[$count]));
 					$currentSubChunk->setBlock($x & 0x0f, $y & 0x0f, $z & 0x0f,
 						ord($undodataId[$count]) & 0xff,
 						ord($undodataDamage[$count]) & 0xff
@@ -1076,6 +1201,8 @@ class UndoAsyncTask extends AsyncTask{
 		}
 		$this->chunks_result = serialize($chunks);
 		unset($chunks);
+		$this->changed = serialize($changed);
+		unset($changed);
 	}
 
 	public function onCompletion(Server $server){
@@ -1088,10 +1215,14 @@ class UndoAsyncTask extends AsyncTask{
 		Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[2/2] 2つめの変更を開始します...");
 		$chunks = unserialize($this->chunks_result);
 		unset($this->chunks_result);
+		$changed = unserialize($this->changed);
+		unset($this->changed);
 		$level = $server->getLevelByName($this->LevelName);
 		foreach($chunks as $hash => $chunk){
-			Level::getXZ($hash, $x, $z);
-			$level->setChunk($x, $z, $chunk, false);
+			if(isset($changed[$hash])){
+				Level::getXZ($hash, $x, $z);
+				$level->setChunk($x, $z, $chunk, false);
+			}
 		}
 		Server::getInstance()->broadcastMessage("[WorldEditor_Plus]".$label."[2/2] 2つめの変更が終了しました。");
 	}
