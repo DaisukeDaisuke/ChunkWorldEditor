@@ -13,6 +13,18 @@ commands:
  ////setppp:
   description: チャンクワールドエディタです。
   usage: "////setppp"
+ ////uset:
+  description: 非同期なチャンクワールドエディタです。
+  usage: "////uset"
+ ////usetpp:
+  description: チャンクワールドエディタです。
+  usage: "////usetpp"
+ ////usetppp:
+  description: チャンクワールドエディタです。
+  usage: "////usetppp"
+ ////undo:
+  description: undoを実行致します。
+  usage: "////undo"
  ////e:
   description: 非同期なチャンクワールドエディタ、座標リセットコマンドでございます。
   usage: "/////e"
