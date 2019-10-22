@@ -19,6 +19,9 @@ commands:
  ////usetpp:
   description: チャンクワールドエディタです。
   usage: "////usetpp"
+ ////usetppp:
+  description: チャンクワールドエディタです。
+  usage: "////usetppp"
  ////undo:
   description: undoを実行致します。
   usage: "////undo"
